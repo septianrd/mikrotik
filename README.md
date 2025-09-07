@@ -67,7 +67,7 @@ Dengan kombinasi CIR dan MIR, setiap user memperoleh jaminan minimum sekaligus f
 ---
 
 ## Studi Kasus
-<img width="1920" height="1080" alt="Mikrotik 1" src="https://github.com/user-attachments/assets/6ee960ed-5037-45e0-9925-d41c3c337d41"
+<img width="1920" height="1080" alt="Mikrotik 1 - Copy" src="https://github.com/user-attachments/assets/90173827-ab75-4fcc-a202-3a9ba764c35f" />
 
 Pada studi kasus ini, diasumsikan ISP memberikan bandwidth lima megabit per detik untuk download dan tiga megabit per detik untuk upload. Bandwidth tersebut akan dibagi ke dua user, yaitu Manager dan Karyawan, yang memiliki subnet berbeda.  
 
