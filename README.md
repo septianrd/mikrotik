@@ -1,4 +1,4 @@
-
+# Tutorial HTB (Hierarchical Token Bucket) MikroTik
 ## Identitas Tim
 Video tutorial ini dibuat oleh tim dari [Nama Sekolah] dengan anggota [Nama Siswa 1] dan [Nama Siswa 2].  
 Nomor peserta kami adalah [Nomor Peserta].
@@ -16,7 +16,7 @@ Keunggulan HTB adalah pembagian bandwidth yang lebih fleksibel karena memakai ko
 ---
 
 ## Studi Kasus
-<img width="1920" height="1080" alt="Mikrotik 3" src="https://github.com/user-attachments/assets/686d01fd-8274-4b47-b848-e90adf0c838c" /># Tutorial HTB (Hierarchical Token Bucket) MikroTik
+<img width="1920" height="1080" alt="Mikrotik 3" src="https://github.com/user-attachments/assets/686d01fd-8274-4b47-b848-e90adf0c838c" />
 
 
 Agar lebih mudah dipahami, mari kita ambil contoh kasus di sebuah SMK. Ada dua jurusan yang sama-sama menggunakan internet sekolah, yaitu jurusan SIJA dan jurusan Teknik Elektronika. Total bandwidth dari ISP adalah lima megabit per detik untuk download dan tiga megabit per detik untuk upload. Karena jurusan SIJA sering melakukan ujian online dan praktik jaringan, mereka membutuhkan bandwidth lebih besar dibanding Teknik Elektronika yang hanya memanfaatkan internet untuk browsing ringan.  
