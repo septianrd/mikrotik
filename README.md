@@ -61,7 +61,7 @@ Wassalamualaikum Warahmatullahi Wabarakatuh.
 
 ## Identitas
 SMK [Nama Sekolah]  
-Jurusan: SIJA & Teknik Elektronika  
+Jurusan: SIJA & Teknik Pendingin  
 Bandwidth ISP: Download 10 Mbps, Upload 3 Mbps
 
 ---
@@ -89,41 +89,41 @@ Bandwidth ISP: Download 10 Mbps, Upload 3 Mbps
 
 5. **Mangle – Tandai Koneksi (PREROUTING)**
    - Masuk ke **IP > Firewall > Mangle**
-   - Rule 1: Manager  
+   - Rule 1: Jurusan SIJA  
      - Chain: `prerouting`  
      - Src-Address: `172.168.10.2-172.168.10.5`  
-     - Action: `mark-connection` → `con-manager`  
+     - Action: `mark-connection` → `con-sija`  
      - Passthrough: **Yes**  
-   - Rule 2: Karyawan  
+   - Rule 2: Jurusan Pendingin  
      - Chain: `prerouting`  
      - Src-Address: `172.168.10.6-172.168.10.10`  
-     - Action: `mark-connection` → `con-karyawan`  
+     - Action: `mark-connection` → `con-pendingin`  
      - Passthrough: **Yes**
 
 6. **Mangle – Tandai Paket (FORWARD)**
-   - Rule 3: Manager Download  
+   - Rule 3: SIJA Download  
      - Chain: `forward`  
-     - Connection Mark: `con-manager`  
+     - Connection Mark: `con-sija`  
      - Out Interface: `bridge1`  
-     - Action: `mark-packet` → `manager-download`  
+     - Action: `mark-packet` → `sija-download`  
      - Passthrough: **No**
-   - Rule 4: Karyawan Download  
+   - Rule 4: Pendingin Download  
      - Chain: `forward`  
-     - Connection Mark: `con-karyawan`  
+     - Connection Mark: `con-pendingin`  
      - Out Interface: `bridge1`  
-     - Action: `mark-packet` → `karyawan-download`  
+     - Action: `mark-packet` → `pendingin-download`  
      - Passthrough: **No**
-   - Rule 5: Manager Upload  
+   - Rule 5: SIJA Upload  
      - Chain: `forward`  
-     - Connection Mark: `con-manager`  
+     - Connection Mark: `con-sija`  
      - Out Interface: `wlan1`  
-     - Action: `mark-packet` → `manager-upload`  
+     - Action: `mark-packet` → `sija-upload`  
      - Passthrough: **No**
-   - Rule 6: Karyawan Upload  
+   - Rule 6: Pendingin Upload  
      - Chain: `forward`  
-     - Connection Mark: `con-karyawan`  
+     - Connection Mark: `con-pendingin`  
      - Out Interface: `wlan1`  
-     - Action: `mark-packet` → `karyawan-upload`  
+     - Action: `mark-packet` → `pendingin-upload`  
      - Passthrough: **No**
 
 7. **Queue Tree – Parent Download**
@@ -132,17 +132,17 @@ Bandwidth ISP: Download 10 Mbps, Upload 3 Mbps
      - Name: `parent-download`  
      - Parent: `bridge1`  
      - Max-Limit: `10M`  
-   - Child Manager Download:  
-     - Name: `manager-download`  
+   - Child SIJA Download:  
+     - Name: `sija-download`  
      - Parent: `parent-download`  
-     - Packet Mark: `manager-download`  
+     - Packet Mark: `sija-download`  
      - Limit-at: `3M`  
      - Max-Limit: `5M`  
      - Priority: `1`  
-   - Child Karyawan Download:  
-     - Name: `karyawan-download`  
+   - Child Pendingin Download:  
+     - Name: `pendingin-download`  
      - Parent: `parent-download`  
-     - Packet Mark: `karyawan-download`  
+     - Packet Mark: `pendingin-download`  
      - Limit-at: `2M`  
      - Max-Limit: `3M`  
      - Priority: `8`  
@@ -152,17 +152,17 @@ Bandwidth ISP: Download 10 Mbps, Upload 3 Mbps
      - Name: `parent-upload`  
      - Parent: `bridge1`  
      - Max-Limit: `3M`  
-   - Child Manager Upload:  
-     - Name: `manager-upload`  
+   - Child SIJA Upload:  
+     - Name: `sija-upload`  
      - Parent: `parent-upload`  
-     - Packet Mark: `manager-upload`  
+     - Packet Mark: `sija-upload`  
      - Limit-at: `1M`  
      - Max-Limit: `2M`  
      - Priority: `1`  
-   - Child Karyawan Upload:  
-     - Name: `karyawan-upload`  
+   - Child Pendingin Upload:  
+     - Name: `pendingin-upload`  
      - Parent: `parent-upload`  
-     - Packet Mark: `karyawan-upload`  
+     - Packet Mark: `pendingin-upload`  
      - Limit-at: `1M`  
      - Max-Limit: `2M`  
      - Priority: `8`  
