@@ -10,6 +10,7 @@ Nomor peserta kami adalah [Nomor Peserta].
 Assalamualaikum Warahmatullahi Wabarakatuh.  
 Pada kesempatan kali ini kami akan menjelaskan tentang manajemen bandwidth menggunakan Hierarchical Token Bucket atau HTB pada MikroTik. Sebenarnya, MikroTik sudah menyediakan **simple queue** untuk membatasi bandwidth, namun simple queue memiliki keterbatasan. Ketika jumlah user bertambah banyak, simple queue sering tidak efisien, sulit diatur prioritasnya, dan terkadang hasil pembagian bandwidth tidak konsisten. Oleh karena itu digunakan **HTB**.  
 
+
 Keunggulan HTB adalah pembagian bandwidth yang lebih fleksibel karena memakai konsep **hierarki**. Di dalam HTB ada dua istilah penting: **inner queue** dan **leaf queue**. Inner queue adalah parent queue yang berfungsi sebagai wadah utama, biasanya dipasang di interface dengan kapasitas bandwidth total. Sedangkan leaf queue adalah child queue yang menempel pada inner queue, digunakan untuk mengikat packet mark tertentu dan membagi bandwidth sesuai kebutuhan. Dengan HTB, kita bisa memberikan bandwidth minimum, maksimum, serta prioritas untuk masing-masing user atau kelompok IP sehingga jaringan tetap adil dan efisien.
 
 ---
