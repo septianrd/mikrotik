@@ -55,3 +55,125 @@ Dari studi kasus ini, terlihat bahwa HTB lebih unggul dibanding simple queue dal
 Demikianlah penjelasan mengenai HTB pada MikroTik beserta penerapannya dalam studi kasus di sebuah SMK. Dengan memahami konsep mangle, inner queue, dan leaf queue, administrator dapat mengatur bandwidth lebih adil dan efisien. Semoga penjelasan ini bermanfaat dan bisa diterapkan pada jaringan nyata.  
 
 Wassalamualaikum Warahmatullahi Wabarakatuh.
+
+---
+# README - Konfigurasi HTB MikroTik (GUI Step by Step)
+
+## Identitas
+SMK [Nama Sekolah]  
+Jurusan: SIJA & Teknik Elektronika  
+Bandwidth ISP: Download 10 Mbps, Upload 3 Mbps
+
+---
+
+## Langkah-langkah Konfigurasi via GUI
+
+1. **Buat Bridge**
+   - Buka menu **Bridge > Bridge** → klik **+ Add**
+   - Beri nama: `bridge1`
+
+2. **Masukkan Port ke Bridge**
+   - Buka menu **Bridge > Ports**
+   - Tambahkan port `ether2` dan `ether3` ke `bridge1`
+
+3. **Tambahkan IP Address ke Bridge**
+   - Buka menu **IP > Address**
+   - Tambahkan `172.168.10.1/24` ke interface `bridge1`
+
+4. **Konfigurasi NAT (biar client bisa internet)**
+   - Masuk ke **IP > Firewall > NAT**
+   - Tambahkan rule baru:
+     - Chain: `srcnat`
+     - Out Interface: `wlan1`
+     - Action: `masquerade`
+
+5. **Mangle – Tandai Koneksi (PREROUTING)**
+   - Masuk ke **IP > Firewall > Mangle**
+   - Rule 1: Manager  
+     - Chain: `prerouting`  
+     - Src-Address: `172.168.10.2-172.168.10.5`  
+     - Action: `mark-connection` → `con-manager`  
+     - Passthrough: **Yes**  
+   - Rule 2: Karyawan  
+     - Chain: `prerouting`  
+     - Src-Address: `172.168.10.6-172.168.10.10`  
+     - Action: `mark-connection` → `con-karyawan`  
+     - Passthrough: **Yes**
+
+6. **Mangle – Tandai Paket (FORWARD)**
+   - Rule 3: Manager Download  
+     - Chain: `forward`  
+     - Connection Mark: `con-manager`  
+     - Out Interface: `bridge1`  
+     - Action: `mark-packet` → `manager-download`  
+     - Passthrough: **No**
+   - Rule 4: Karyawan Download  
+     - Chain: `forward`  
+     - Connection Mark: `con-karyawan`  
+     - Out Interface: `bridge1`  
+     - Action: `mark-packet` → `karyawan-download`  
+     - Passthrough: **No**
+   - Rule 5: Manager Upload  
+     - Chain: `forward`  
+     - Connection Mark: `con-manager`  
+     - Out Interface: `wlan1`  
+     - Action: `mark-packet` → `manager-upload`  
+     - Passthrough: **No**
+   - Rule 6: Karyawan Upload  
+     - Chain: `forward`  
+     - Connection Mark: `con-karyawan`  
+     - Out Interface: `wlan1`  
+     - Action: `mark-packet` → `karyawan-upload`  
+     - Passthrough: **No**
+
+7. **Queue Tree – Parent Download**
+   - Buka **Queues > Queue Tree**
+   - Buat Parent Queue:  
+     - Name: `parent-download`  
+     - Parent: `bridge1`  
+     - Max-Limit: `10M`  
+   - Child Manager Download:  
+     - Name: `manager-download`  
+     - Parent: `parent-download`  
+     - Packet Mark: `manager-download`  
+     - Limit-at: `3M`  
+     - Max-Limit: `5M`  
+     - Priority: `1`  
+   - Child Karyawan Download:  
+     - Name: `karyawan-download`  
+     - Parent: `parent-download`  
+     - Packet Mark: `karyawan-download`  
+     - Limit-at: `2M`  
+     - Max-Limit: `3M`  
+     - Priority: `8`  
+
+8. **Queue Tree – Parent Upload**
+   - Buat Parent Queue:  
+     - Name: `parent-upload`  
+     - Parent: `bridge1`  
+     - Max-Limit: `3M`  
+   - Child Manager Upload:  
+     - Name: `manager-upload`  
+     - Parent: `parent-upload`  
+     - Packet Mark: `manager-upload`  
+     - Limit-at: `1M`  
+     - Max-Limit: `2M`  
+     - Priority: `1`  
+   - Child Karyawan Upload:  
+     - Name: `karyawan-upload`  
+     - Parent: `parent-upload`  
+     - Packet Mark: `karyawan-upload`  
+     - Limit-at: `1M`  
+     - Max-Limit: `2M`  
+     - Priority: `8`  
+
+---
+
+## Catatan
+- **Limit-at** = jatah minimum bandwidth yang dijamin.  
+- **Max-limit** = batas maksimal yang bisa dipakai kalau bandwidth kosong.  
+- **Priority** = angka lebih kecil berarti lebih diprioritaskan.  
+- **Parent Queue** = tidak pakai packet-mark, hanya jadi wadah bandwidth.  
+- **Child Queue** = wajib pakai packet-mark hasil mangle.  
+
+---
