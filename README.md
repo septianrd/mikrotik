@@ -8,98 +8,47 @@ Nomor peserta kami adalah [Nomor Peserta].
 
 ## Prolog
 Assalamualaikum Warahmatullahi Wabarakatuh.  
-Pada kesempatan kali ini kami akan menjelaskan mengenai Hierarchical Token Bucket atau HTB, yaitu mekanisme manajemen bandwidth pada MikroTik yang bekerja dengan konsep parent dan child queue. Parent queue berfungsi sebagai wadah utama yang menentukan total kapasitas bandwidth, sementara child queue digunakan untuk membagi bandwidth tersebut ke setiap user atau subnet. Dengan HTB, administrator jaringan dapat mengatur distribusi bandwidth secara terstruktur, adil, dan fleksibel.  
+Pada kesempatan kali ini kami akan menjelaskan tentang manajemen bandwidth menggunakan Hierarchical Token Bucket atau HTB pada MikroTik. Sebenarnya, MikroTik sudah menyediakan **simple queue** untuk membatasi bandwidth, namun simple queue memiliki keterbatasan. Ketika jumlah user bertambah banyak, simple queue sering tidak efisien, sulit diatur prioritasnya, dan terkadang hasil pembagian bandwidth tidak konsisten. Oleh karena itu digunakan **HTB**.  
 
-Berbeda dengan Simple Queue yang lebih sederhana, HTB memiliki keunggulan pada fleksibilitas dan efisiensi terutama ketika jumlah user semakin banyak. HTB memungkinkan pembagian bandwidth minimum dan maksimum serta penggunaan prioritas, sehingga performa jaringan tetap stabil meskipun dalam kondisi padat.  
+<img width="1920" height="1080" alt="Mikrotik 2" src="https://github.com/user-attachments/assets/b6a62220-0702-4959-a69d-e78f77c07adc" />
 
----
-
-## Konsep Dasar HTB
-HTB bekerja dengan membagi bandwidth total yang dimiliki sebuah jaringan ke dalam struktur hirarkis. Parent queue menentukan kapasitas total bandwidth, sedangkan child queue membagi bandwidth tersebut ke user tertentu. Dengan model hirarki ini, administrator dapat memberikan batasan dan jaminan kecepatan kepada setiap user sesuai kebutuhan.  
-
-Dengan konsep hirarki, bandwidth tidak hanya dibagi rata, tetapi juga diatur agar lebih adil. Ketika satu user tidak aktif, bandwidth yang tidak terpakai dapat dipakai oleh user lain. Sebaliknya, ketika jaringan padat, setiap user tetap mendapatkan jatah minimum sesuai konfigurasi.  
-
----
-
-## Inner Queue dan Leaf Queue
-![Inner vs Leaf Queue](https://github.com/user-attachments/assets/e16eacd8-f82b-4934-a576-972e01f6e19d)
-
-Dalam HTB terdapat dua jenis queue, yaitu inner queue dan leaf queue. Inner queue adalah queue induk atau parent yang hanya berfungsi sebagai wadah pembagi bandwidth. Inner queue biasanya tidak mengikat langsung ke packet mark, melainkan hanya menetapkan kapasitas total.  
-
-Sebaliknya, leaf queue adalah child queue yang langsung mengikat ke packet mark hasil mangle. Leaf queue inilah yang benar-benar melakukan pembatasan atau shaping pada trafik. Parameter seperti Committed Information Rate (CIR), Max Limit (MIR), dan priority diterapkan pada leaf queue.  
-
-Struktur umum HTB dapat digambarkan sebagai berikut:  
-
-- Parent queue sebagai inner queue, misalnya total bandwidth download lima megabit per detik.  
-- Child queue sebagai leaf queue, misalnya user Manager dan user Karyawan dengan packet mark yang berbeda.  
-
-Dengan pemisahan ini, manajemen bandwidth menjadi lebih terstruktur karena inner queue membatasi total kapasitas, sementara leaf queue membatasi trafik per user atau subnet.  
-
----
-
-## Konfigurasi Mangle (Teori)
-Sebelum membuat queue tree, administrator perlu menandai trafik dengan menggunakan mangle. Mangle digunakan untuk memberi tanda pada koneksi atau paket agar dapat dikenali oleh queue.  
-
-Prinsip konfigurasi mangle adalah sebagai berikut:  
-1. Membuat rule baru pada menu IP > Firewall > Mangle.  
-2. Chain menggunakan `prerouting`, karena kita ingin menandai paket sedini mungkin sebelum masuk ke proses routing.  
-3. Source address diisi dengan subnet user, misalnya `172.168.10.0/24` untuk Manager dan `172.168.20.0/24` untuk Karyawan.  
-4. Action pertama adalah `mark-connection`. Dengan ini, koneksi diberi tanda tertentu, misalnya `conn-manager` dan `conn-karyawan`. Parameter passthrough tetap diaktifkan agar rule selanjutnya tetap berjalan.  
-5. Setelah itu, dibuat rule kedua dengan action `mark-packet`. Pada rule ini, connection mark yang sudah ada dipanggil, kemudian diarahkan ke `mark-packet`, misalnya `pkt-manager` dan `pkt-karyawan`. Passthrough tetap diaktifkan.  
-
-Dengan dua tahap ini, setiap trafik memiliki packet mark yang unik sehingga bisa dipisahkan ke dalam child queue.  
-
----
-
-## Queue Tree (Teori)
-Setelah mangle selesai dibuat, kita lanjut ke konfigurasi queue tree. Karena bandwidth upload dan download berbeda, maka kita perlu membuat dua parent queue:  
-- Parent download pada interface WAN atau global-in.  
-- Parent upload pada interface LAN atau global-out.  
-
-Di bawah setiap parent, dibuat child queue sesuai packet mark masing-masing user. Child queue inilah yang berfungsi sebagai leaf queue, yang langsung melakukan shaping pada trafik user.  
-
-Dua parameter penting dalam child queue adalah:  
-- **CIR (Committed Information Rate)**, yaitu bandwidth minimum yang dijamin akan diterima user meskipun jaringan padat.  
-- **MIR (Max Limit)**, yaitu bandwidth maksimum yang boleh digunakan user jika jaringan dalam kondisi idle.  
-
-Dengan kombinasi CIR dan MIR, setiap user memperoleh jaminan minimum sekaligus fleksibilitas penggunaan bandwidth maksimum.  
+Keunggulan HTB adalah pembagian bandwidth yang lebih fleksibel karena memakai konsep **hierarki**. Di dalam HTB ada dua istilah penting: **inner queue** dan **leaf queue**. Inner queue adalah parent queue yang berfungsi sebagai wadah utama, biasanya dipasang di interface dengan kapasitas bandwidth total. Sedangkan leaf queue adalah child queue yang menempel pada inner queue, digunakan untuk mengikat packet mark tertentu dan membagi bandwidth sesuai kebutuhan. Dengan HTB, kita bisa memberikan bandwidth minimum, maksimum, serta prioritas untuk masing-masing user atau kelompok IP sehingga jaringan tetap adil dan efisien.
 
 ---
 
 ## Studi Kasus
-<img width="1920" height="1080" alt="Mikrotik 1 - Copy" src="https://github.com/user-attachments/assets/90173827-ab75-4fcc-a202-3a9ba764c35f" />
+Agar lebih mudah dipahami, mari kita ambil contoh kasus di sebuah SMK. Ada dua jurusan yang sama-sama menggunakan internet sekolah, yaitu jurusan SIJA dan jurusan Teknik Elektronika. Total bandwidth dari ISP adalah lima megabit per detik untuk download dan tiga megabit per detik untuk upload. Karena jurusan SIJA sering melakukan ujian online dan praktik jaringan, mereka membutuhkan bandwidth lebih besar dibanding Teknik Elektronika yang hanya memanfaatkan internet untuk browsing ringan.  
 
-Pada studi kasus ini, diasumsikan ISP memberikan bandwidth lima megabit per detik untuk download dan tiga megabit per detik untuk upload. Bandwidth tersebut akan dibagi ke dua user, yaitu Manager dan Karyawan, yang memiliki subnet berbeda.  
+Untuk mempermudah pembagian, administrator jaringan membagi alamat IP. Jurusan SIJA mendapatkan rentang `172.168.10.2–172.168.10.20`, sedangkan Teknik Elektronika menggunakan `172.168.10.21–172.168.10.40`. Dengan skema ini, trafik bisa dipisahkan berdasarkan IP, ditandai dengan mangle, lalu diatur dengan queue tree menggunakan HTB.
 
-Langkah konfigurasi adalah sebagai berikut:  
+---
 
-### 1. Mangle
-Konsep mangle yang sudah dijelaskan sebelumnya sekarang diterapkan dengan subnet nyata:  
-- Subnet `172.168.10.0/24` untuk Manager, diberi tanda `conn-manager` lalu `pkt-manager`.  
-- Subnet `172.168.20.0/24` untuk Karyawan, diberi tanda `conn-karyawan` lalu `pkt-karyawan`.  
+## Mangle dalam Studi Kasus
+Langkah pertama adalah membuat rule mangle untuk menandai trafik. Kenapa harus mangle? Karena queue tree hanya bisa bekerja jika trafik sudah diberi tanda. Kita pakai chain **prerouting** karena paket ditangani sejak awal sebelum diteruskan, sehingga semua trafik bisa ditandai baik upload maupun download.  
 
-Dengan ini, trafik Manager dan Karyawan sudah dapat dipisahkan.  
+Pertama kita buat rule dengan action **mark-connection**. Rule ini akan menempelkan connection mark, misalnya `conn-sija` untuk jurusan SIJA dan `conn-elektro` untuk jurusan Teknik Elektronika. Connection mark berguna supaya semua paket dalam satu koneksi internet mendapat tanda yang sama. Opsi passthrough diaktifkan agar rule berikutnya tetap berjalan.  
 
-### 2. Queue Tree
-- **Parent Download**: lima megabit per detik di interface WAN atau global-in.  
-  - Child download Manager: CIR tiga megabit per detik, MIR lima megabit per detik, diarahkan ke `pkt-manager`.  
-  - Child download Karyawan: CIR dua megabit per detik, MIR tiga megabit per detik, diarahkan ke `pkt-karyawan`.  
-- **Parent Upload**: tiga megabit per detik di interface LAN atau global-out.  
-  - Child upload Manager: CIR dua megabit per detik, MIR tiga megabit per detik, diarahkan ke `pkt-manager`.  
-  - Child upload Karyawan: CIR satu megabit per detik, MIR dua megabit per detik, diarahkan ke `pkt-karyawan`.  
+Setelah itu dibuat rule kedua dengan action **mark-packet**. Rule ini mengambil connection mark tadi dan mengubahnya menjadi packet mark, misalnya `pkt-sija` dan `pkt-elektro`. Di bagian ini passthrough dimatikan, karena kita ingin setiap paket hanya memakai satu tanda yang jelas. Dengan cara ini, semua trafik sudah terbagi menjadi dua kelompok sesuai jurusannya.
 
-Dengan konfigurasi ini, Manager mendapatkan jaminan bandwidth lebih besar dibandingkan Karyawan, baik pada arah download maupun upload. Namun ketika salah satu user tidak aktif, user lain dapat menggunakan bandwidth hingga batas maksimum yang ditentukan.  
+---
+
+## Queue Tree dalam Studi Kasus
+Tahap berikutnya adalah membuat queue tree. Seperti dijelaskan di awal, ada inner queue sebagai parent dan leaf queue sebagai child.  
+
+Pertama kita buat **inner queue** untuk download dengan parent `ether1` karena interface ini terhubung ke WAN. Kapasitasnya sesuai bandwidth ISP yaitu lima megabit. Kita juga buat inner queue upload dengan kapasitas tiga megabit di interface yang sama. Inner queue tidak perlu memakai packet mark karena fungsinya hanya sebagai wadah utama.  
+
+Setelah itu kita buat **leaf queue**. Leaf queue selalu membutuhkan packet mark karena ia benar-benar mengikat trafik yang sudah ditandai di mangle. Untuk parent download, leaf queue pertama diarahkan ke `pkt-sija` dengan limit-at tiga megabit dan max-limit lima megabit. Leaf queue kedua diarahkan ke `pkt-elektro` dengan limit-at dua megabit dan max-limit tiga megabit. Demikian juga untuk parent upload, SIJA mendapat jaminan dua megabit dengan maksimum tiga, sedangkan Teknik Elektronika hanya satu megabit dengan maksimum dua.  
+
+Parameter lain yang penting adalah **priority** yang menentukan urutan antrean ketika bandwidth penuh, **queue type** yang biasanya default `pcq` untuk distribusi rata, serta **bucket size** yang mengatur distribusi token bandwidth. Sementara **tab statistics** dipakai untuk memastikan trafik benar-benar masuk ke antrian yang sesuai dan sesuai dengan konfigurasi yang kita buat.
 
 ---
 
 ## Kesimpulan
-HTB pada MikroTik merupakan mekanisme manajemen bandwidth yang lebih fleksibel dibandingkan Simple Queue. Dengan konsep inner queue dan leaf queue, administrator dapat membuat struktur pembagian bandwidth yang teratur dan efisien.  
-
-Melalui kombinasi CIR dan MIR, HTB tidak hanya memberikan jaminan bandwidth minimum tetapi juga fleksibilitas penggunaan maksimum. Studi kasus pembagian lima megabit per detik download dan tiga megabit per detik upload antara Manager dan Karyawan menunjukkan bagaimana HTB dapat digunakan untuk membagi bandwidth secara adil dan adaptif sesuai kebutuhan jaringan.  
+Dari studi kasus ini, terlihat bahwa HTB lebih unggul dibanding simple queue dalam mengelola bandwidth. Dengan mangle, trafik dari jurusan SIJA dan Teknik Elektronika bisa dipisahkan jelas. Dengan queue tree, bandwidth bisa dibagi sesuai kebutuhan dengan inner queue sebagai pembatas utama dan leaf queue sebagai pembagi untuk setiap jurusan. Hasilnya, SIJA yang membutuhkan bandwidth lebih besar mendapatkan alokasi prioritas, sementara Teknik Elektronika tetap mendapat jatah yang sesuai.  
 
 ---
 
 ## Penutup
-Demikian tutorial mengenai HTB MikroTik. Semoga dapat memberikan pemahaman tentang konsep dasar, komponen utama, konfigurasi mangle, dan penerapan queue tree dalam manajemen bandwidth.  
+Demikianlah penjelasan mengenai HTB pada MikroTik beserta penerapannya dalam studi kasus di sebuah SMK. Dengan memahami konsep mangle, inner queue, dan leaf queue, administrator dapat mengatur bandwidth lebih adil dan efisien. Semoga penjelasan ini bermanfaat dan bisa diterapkan pada jaringan nyata.  
 
 Wassalamualaikum Warahmatullahi Wabarakatuh.
