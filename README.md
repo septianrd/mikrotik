@@ -17,11 +17,14 @@ Keunggulan HTB adalah pembagian bandwidth yang lebih fleksibel karena memakai ko
 ---
 
 ## Studi Kasus
+![Uploading Mikrotik 3.png…]()
+
 Agar lebih mudah dipahami, mari kita ambil contoh kasus di sebuah SMK. Ada dua jurusan yang sama-sama menggunakan internet sekolah, yaitu jurusan SIJA dan jurusan Teknik Elektronika. Total bandwidth dari ISP adalah lima megabit per detik untuk download dan tiga megabit per detik untuk upload. Karena jurusan SIJA sering melakukan ujian online dan praktik jaringan, mereka membutuhkan bandwidth lebih besar dibanding Teknik Elektronika yang hanya memanfaatkan internet untuk browsing ringan.  
 
 Untuk mempermudah pembagian, administrator jaringan membagi alamat IP. Jurusan SIJA mendapatkan rentang `172.168.10.2–172.168.10.20`, sedangkan Teknik Elektronika menggunakan `172.168.10.21–172.168.10.40`. Dengan skema ini, trafik bisa dipisahkan berdasarkan IP, ditandai dengan mangle, lalu diatur dengan queue tree menggunakan HTB.
 
 ---
+<img width="1920" height="1080" alt="Mikrotik 1 - Copy" src="https://github.com/user-attachments/assets/ccdfe931-6644-4539-bd0e-d3e28db89ef1" />
 
 ## Mangle dalam Studi Kasus
 Langkah pertama adalah membuat rule mangle untuk menandai trafik. Kenapa harus mangle? Karena queue tree hanya bisa bekerja jika trafik sudah diberi tanda. Kita pakai chain **prerouting** karena paket ditangani sejak awal sebelum diteruskan, sehingga semua trafik bisa ditandai baik upload maupun download.  
